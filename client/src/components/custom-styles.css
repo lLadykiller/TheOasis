@@ -1,0 +1,14 @@
+/* custom-styles.css */
+/* Define Overwatch 2 color scheme */
+.overwatch-bg {
+    background-color: #0091DA; /* Dark teal background color */
+  }
+  
+  .overwatch-text {
+    color: #0091DA; /* Bright blue text color */
+  }
+  
+  .overwatch-accent {
+    color: #FFAC2D; /* Orange accent color */
+  }
+  
