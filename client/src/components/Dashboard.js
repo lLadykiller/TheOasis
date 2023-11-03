@@ -8,6 +8,7 @@ function Dashboard() {
       <p>This is where you can see your account information and other data.</p>
 
       <div className="user-info">
+      
         <h3>User Information</h3>
         {/* Display user information here */}
       </div>

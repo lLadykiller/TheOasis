@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Usercard({ user }) {
+function Usercard({ user, handleDelete, handleInputChange}) {
   const { username, rank, battle_tag, main_hero, most_played, role, playstyle } = user;
 
   return (
@@ -12,6 +12,7 @@ function Usercard({ user }) {
       <p><strong>Most Played Hero:</strong> {most_played}</p>
       <p><strong>Role:</strong> {role}</p>
       <p><strong>Playstyle:</strong> {playstyle}</p>
+     
     </div>
   );
 }

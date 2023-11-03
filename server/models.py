@@ -16,6 +16,8 @@ class User(db.Model,UserMixin, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
+    
+    
     username = db.Column(db.String(100), unique=True, nullable=False)
     rank = db.Column(db.String(20))
     battle_tag = db.Column(db.String(40))
@@ -25,9 +27,9 @@ class User(db.Model,UserMixin, SerializerMixin):
     playstyle = db.Column(db.String(20))
 
     # Define relationships
-    posts = relationship('Post', back_populates='author')
-    heroes = relationship('Hero', secondary='user_hero_association', back_populates='users')
-    comments = relationship('Comment', back_populates='user')       
+    posts = db.relationship('Post', back_populates='author')
+    heroes = db.relationship('Hero', secondary='user_hero_association', back_populates='users')
+    comments = db.relationship('Comment', back_populates='user')       
     def serialize(self):
         return {
             'id': self.id,
@@ -54,17 +56,26 @@ class User(db.Model,UserMixin, SerializerMixin):
 class Hero(db.Model, SerializerMixin):
     __tablename__ = 'heroes'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    lore = Column(String(300), nullable=False)
-    role = Column(String(20), nullable=False)
-    health = Column(Integer, nullable=False)
-
-    # Serialize method for converting the model to a dictionary
     
+    id = db.Column(Integer, primary_key=True)
+    name = db.Column(String(100), nullable=False)
+    description = db.Column(String(300))  # Add the description field
+    role = db.Column(String(20), nullable=False)
+    health = db.Column(Integer, nullable=False)
+    image = db.Column(String(255))
+    # Serialize method for converting the model to a dictionary
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'role': self.role,
+            'health': self.health,
+            'image': self.image  # Include 'image' if you have an 'image' field
+        }
 
     # Define relationships
-    users = relationship('User', secondary='user_hero_association', back_populates='heroes')
+    users = db.relationship('User', secondary='user_hero_association', back_populates='heroes')
 
 # Define a many-to-many association table for users and heroes
 user_hero_association = Table(
@@ -74,18 +85,27 @@ user_hero_association = Table(
     Column('hero_id', Integer, ForeignKey('heroes.id'))
 )
 
-class Post(db.Model, SerializerMixin):
+class Post(db.Model,UserMixin, SerializerMixin):
     __tablename__ = 'posts'
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String(100), nullable=False)
-    content = Column(Text, nullable=False)
-    username = Column(Integer, ForeignKey('users.username'), nullable=False)
-    timestamp = Column(DateTime, nullable=False)
+    id = db.Column(Integer, primary_key=True)
+    title = db.Column(String(100), nullable=False)
+    content = db.Column(Text, nullable=False)
+    username = db.Column(Integer, ForeignKey('users.username'), nullable=False)
+    timestamp = db.Column(DateTime, nullable=False)
+    
+    def serialize(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'username': self.username,
+            'timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S')  # Format the timestamp as a string
+        }
 
     # Define relationships
-    author = relationship('User', back_populates='posts')
-    comments = relationship('Comment', back_populates='post')
+    author = db.relationship('User', back_populates='posts')
+    comments = db.relationship('Comment', back_populates='post')
 
     # Serialize method for converting the model to a dictionary
    
@@ -99,3 +119,11 @@ class Comment(db.Model):
 
     post = db.relationship('Post', back_populates='comments')
     user = db.relationship('User', back_populates='comments')
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'post_id': self.post_id,
+            'text': self.text,
+            # Add more fields as needed
+        }

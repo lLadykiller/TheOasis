@@ -1,35 +1,45 @@
 // Posts.js
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import Postcard from './Postcard';
+import PostForm from './PostForm';
 
 function Posts() {
   const [posts, setPosts] = useState([]);
 
-  useEffect(() => {
-    // Fetch posts from the backend and set them in the state
-    fetchPostsFromBackend();
-  }, []);
+ 
 
-  const fetchPostsFromBackend = () => {
-    // Make a GET request to retrieve the posts from your backend
-    fetch('/posts') // Replace with your actual backend endpoint
-      .then((response) => response.json())
+  const createPost = (newPost) => {
+    fetch('/api/create_post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newPost),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then((data) => {
-        setPosts(data);
+        setPosts([...posts, data]); // Update the posts list
       })
       .catch((error) => {
-        console.error('Error fetching posts:', error);
+        console.error('Error creating a post:', error);
       });
   };
-
+  
   return (
     <div>
-      <CreatePostForm createPost={createPost} />
-      {posts.map((post) => (
-        <div key={post.id}>
-          <h2>{post.title}</h2>
-          <p>{post.content}</p>
-        </div>
-      ))}
+      <h2>Blog Posts</h2>
+      <PostForm createPost={createPost} />
+      <div className="post-list">
+        {posts.map((post) => (
+          <Postcard key={post.id} post={post} />
+        ))}
+      </div>
     </div>
   );
 }

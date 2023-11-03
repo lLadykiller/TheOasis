@@ -11,13 +11,11 @@ function Login() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here, e.g., send a POST request to your login API.
-  };
-  const handleLogin = async () => {
+    
     try {
-      const response = await fetch('/login', {
+      const response = await fetch("http://127.0.0.1:5555/login", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,6 +32,7 @@ function Login() {
       console.error('Error occurred during login:', error);
     }
   };
+  
   
 
   return (
@@ -62,7 +61,7 @@ function Login() {
             required
           />
         </div>
-        <button type="submit">Log In</button>
+        <button  type="submit">Log In</button>
       </form>
     </div>
   );
