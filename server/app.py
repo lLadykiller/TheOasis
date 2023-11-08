@@ -2,102 +2,202 @@
 # from werkzeug.exceptions import Unauthorized
 # from werkzeug.urls import url_decode
 # Standard library imports
-
+from flask import request, make_response, session, abort
 # Remote library imports
-
-from flask import Flask, request, render_template, redirect, url_for, jsonify, flash, make_response
+import ipdb
+from flask import Flask, request, render_template, redirect, url_for, jsonify, flash, make_response, session
 from flask_restful import Resource, reqparse
 from flask_login import LoginManager, login_required, current_user, logout_user, login_user
 from datetime import datetime
 from models import User, Post, Comment, Hero
 # Local imports
 from config import app, db, api
-
+from werkzeug.security import check_password_hash
 # Add your model imports
 
-login_manager = LoginManager(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # Views go here!
 
 
-
 # Define the login route
-login_parser = reqparse.RequestParser()
-login_parser.add_argument('username', type=str, required=True)
-login_parser.add_argument('password', type=str, required=True)
+class CheckSession(Resource):
+    def get(self):
+        if current_user.is_authenticated:
+            return current_user.to_dict()
+            # return user.to_dict(only=("username",))
+
+        else:
+            return {"message": "401: Not Authorized"}, 401
+
+
+api.add_resource(CheckSession, '/check_session')
+
+
+class Login(Resource):
+    def post(self):
+        data = request.get_json()
+
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return {'message': 'Username or password missing.'}, 400
+
+        user = User.query.filter(User.username == username).first()
+
+        if user and user.check_password(password):
+            login_user(user)  # Log in the user
+            return {'message': 'Login successful', 'user_id': user.id}, 200
+        else:
+            return {'message': 'Invalid username or password.'}, 401
+
+
+api.add_resource(Login, "/login")
+
+
 @login_manager.user_loader
 def load_user(user_id):
     # Retrieve the user from the database based on user_id
     return User.query.get(int(user_id))
 
 
-class CreatePost(Resource):
-    def post(self):
-        data = request.get_json()
+@login_manager.unauthorized_handler
+def unauthorized():
+    ipdb.set_trace()
+    return ""
 
-      # Get the current user's username (modify this part based on your authentication system)
-        username = "LadyKiller"
 
-        new_post = Post(
-        title=data.get('title'),
-        content=data.get('content'),
-        username=username,  # Set the username to the current user's username
+# @login_required  # Requires the user to be logged in
+@app.route('/logout', methods=("POST",))
+@login_required
+def logout():
+    logout_user()
+    # Optionally, display a message to the user
+    return ""
+
+
+# @app.route('/user', methods=['GET'])
+# @login_required  # Requires the user to be logged in
+# def get_user_information():
+#     user = current_user
+#     if user:
+#         user_data = {
+#             'id': user.id,
+#             'username': user.username,
+#             'email': user.email,
+#             'rank': user.rank,
+#             # Add other user attributes here
+#         }
+#         return jsonify(user_data), 200
+#     else:
+#         return jsonify({'message': 'User not found'}), 404
+
+
+@app.route('/api/posts', methods=['GET'])
+def get_posts():
+    posts = Post.query.all()  # Query the database to get all posts
+    post_list = [post.serialize() for post in posts]  # Serialize the posts
+
+    return jsonify(post_list), 200  # Return the list of posts as JSON
+
+
+@app.route('/create/post', methods=['POST'])
+@login_required  # Requires the user to be logged in
+def create_post():
+    data = request.get_json()
+    title = data.get('title')
+    content = data.get('content')
+
+    if not title or not content:
+        return jsonify({'message': 'Title or content missing.'}), 400
+
+    if not current_user.is_authenticated:
+        return jsonify({'message': 'User is not logged in.'}), 401
+
+    new_post = Post(
+        title=title,
+        content=content,
+        username=current_user.username,
         timestamp=datetime.utcnow()
     )
 
+    db.session.add(new_post)
+    db.session.commit()
 
-        # Add the new post to the database
-        db.session.add(new_post)
-        db.session.commit()
+    return jsonify({'message': 'Post created successfully', 'post': new_post.serialize()}), 201
 
-        return {"message": "Post created successfully", "post": new_post.serialize()}, 201
-api.add_resource(CreatePost, '/post')
+# class CreatePost(Resource):
+#     def post(self):
+#         data = request.get_json()
 
-class CreateUser(Resource):
-    def post(self):
-        user_data = request.get_json()
+#       # Get the current user's username (modify this part based on your authentication system)
+#         username = "LadyKiller"
 
-        new_user = User(
-            email=user_data.get('email'),
-            password=user_data.get('password'),  # In production, hash the password
-            username=user_data.get('username'),
-            rank=user_data.get('rank'),
-            battle_tag=user_data.get('battle_tag'),
-            main_hero=user_data.get('main_hero'),
-            most_played=user_data.get('most_played'),
-            role=user_data.get('role'),
-            playstyle=user_data.get('playstyle')
-        )
+#         new_post = Post(
+#             title=data.get('title'),
+#             content=data.get('content'),
+#             username=username,  # Set the username to the current user's username
+#             timestamp=datetime.utcnow()
+#         )
 
-        db.session.add(new_user)
-        db.session.commit()
+#         # Add the new post to the database
+#         db.session.add(new_post)
+#         db.session.commit()
 
-        return jsonify(message="User created successfully", user=new_user.serialize()), 201
+#         return {"message": "Post created successfully", "post": new_post.serialize()}, 201
 
 
-class UserDelete(Resource):
-    def delete(self, user_id):
-        user = User.query.get(user_id)  # Query the user by ID
+# api.add_resource(CreatePost, '/post')
+
+@app.route('/profile/create', methods=['POST'])
+@login_required  # Requires the user to be logged in
+def create_profile():
+    try:
+        user = current_user
+
         if user:
-            db.session.delete(user)  # Mark the user for deletion
-            db.session.commit()  # Commit the transaction
-            return {'message': 'User deleted successfully'}
-        else:
-            return {'message': 'User not found'}, 404
+            user_data = request.get_json()
 
-api.add_resource(UserDelete, '/users/<int:user_id>')
+            # Extract the additional profile data from the request
+            rank = user_data.get('rank')
+            battle_tag = user_data.get('battle_tag')
+            main_hero = user_data.get('main_hero')
+            most_played = user_data.get('most_played')
+            role = user_data.get('role')
+            playstyle = user_data.get('playstyle')
+
+            # Update the user's profile data
+            user.rank = rank
+            user.battle_tag = battle_tag
+            user.main_hero = main_hero
+            user.most_played = most_played
+            user.role = role
+            user.playstyle = playstyle
+
+            db.session.commit()
+
+            return jsonify(message="Profile created successfully", user=user.serialize())
+        else:
+            return jsonify(error="User not found"), 404
+    except Exception as e:
+        return jsonify(error="Failed to create profile: " + str(e)), 500
 
 
 @app.route('/signup', methods=['POST'])
 def signup():
     try:
         user_data = request.get_json()
-        
+
         email = user_data.get('email')
-        password = user_data.get('password')  # You should hash the password before storing it
+        # You should hash the password before storing it
+        password = user_data.get('password')
         username = user_data.get('username')
+
         # Add other user data fields as needed
-        
+
         # Check if the email or username is already in use
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
@@ -106,54 +206,53 @@ def signup():
         existing_username = User.query.filter_by(username=username).first()
         if existing_username:
             return jsonify(error="Username already in use"), 400
-        
-        new_user = User(email=email, password=password, username=username)
+
+        new_user = User(email=email, username=username)
+        # Set the password using the set_password method
+        new_user.set_password(password)  # Hash and store the password
+
         # Add other user data fields to the new_user
-        
+
         db.session.add(new_user)
         db.session.commit()
-        
+
         return jsonify(message="User signed up successfully"), 201
     except Exception as e:
         return jsonify(error="Failed to sign up: " + str(e)), 500
 
 
-@app.route('/login', methods=['POST'])
-def login():
-    try:
-        user_data = request.get_json()
-        username = user_data.get('username')
-        password = user_data.get('password')
-
-        # Find the user by username
-        user = User.query.filter_by(username=username).first()
-
-        if user and check_password_hash(user.password, password):
-            # If the user exists and the password is correct, create an access token
-            access_token = create_access_token(identity=user.id)
-            return jsonify(message="Login successful", access_token=access_token), 200
-        else:
-            return jsonify(error="Invalid username or password"), 401
-    except Exception as e:
-        return jsonify(error="Failed to log in: " + str(e)), 500
-
-
-# Define the logout route
-@app.route('/logout')
+@app.route('/user', methods=['GET'])
 @login_required
-def logout():
-    logout_user()
-    flash('Logged out successfully', 'success')
-    return redirect(url_for('index'))  # Replace 'index' with your main page
+def get_user_information():
+    user = current_user
+
+    if user.is_authenticated:
+        user_data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'rank': user.rank,
+            'battle_tag': user.battle_tag,
+            'main_hero': user.main_hero,
+            'most_played': user.most_played,
+            'role': user.role,
+            'playstyle': user.playstyle,
+            # Add other user attributes here
+        }
+
+        return jsonify(user_data), 200
+    else:
+        return jsonify({'message': 'User not found'}), 404
+
+# USER ROUTES CRUD
 
 
-# working
 class Users(Resource):
     def get(self):
         users = [
             user.to_dict(
-                rules=("-posts","-heros", "-friendships",)
-               
+                rules=("-posts", "-heros", )
+
             )
             for user in User.query.all()
         ]
@@ -163,7 +262,32 @@ class Users(Resource):
 api.add_resource(Users, "/users")
 
 
-# working
+# @app.route('/user', methods=['GET'])
+# # Protect the route with authentication
+# def get_user_information():
+#     # Retrieve the signed-in user's information from the authentication system
+#     user = current_user
+
+#     if user:
+#         # Prepare the user's data as a dictionary
+#         user_data = {
+#             'id': user.id,
+#             'username': user.username,
+#             'email': user.email,
+#             'rank': user.rank,
+#             'battle_tag': user.battle_tag,
+#             'main_hero': user.main_hero,
+#             'most_played': user.most_played,
+#             'role': user.role,
+#             'playstyle': user.playstyle,
+#             # Add other user attributes here
+#         }
+
+#         return jsonify(user_data), 200  # Return user data as JSON
+#     else:
+#         return jsonify({'message': 'User not found'}), 404
+
+# # working
 @app.route('/user/create', methods=['POST'])
 def create_user():
     # Retrieve user data from the request
@@ -189,51 +313,15 @@ def create_user():
     # You can return a response to indicate success or provide additional data
     return jsonify(message="User created successfully", user=new_user.serialize())
 
-@app.route('/heroes', methods=['GET'])
-def get_heroes():
-    try:
-        # Query the database to get all heroes
-       
-        heroes = Hero.query.all()
-        heroes_data = [hero.serialize() for hero in heroes]
-        return jsonify(heroes_data), 200
- # Return the hero data as JSON
-    except Exception as e:
-        return jsonify(error="Failed to retrieve heroes: " + str(e)), 500
-
-
-# Route to fetch and save hero data
-@app.route('/heroes', methods=['POST'])
-def create_hero():
-    try:
-        hero_data = request.get_json()
-        
-        
-        image = hero_data.get('image')
-        name = hero_data.get('name')
-        description = hero_data.get('description')
-        role = hero_data.get('role')
-        health = hero_data.get('health')
-       
-        new_hero = Hero(name=name, description=description, role=role, health=health, image=image)
-
-        db.session.add(new_hero)
-        db.session.commit()
-
-        return jsonify(message="Hero created successfully"), 201  # Return 201 for created status
-    except Exception as e:
-        return jsonify(error="Failed to create hero: " + str(e)), 500
-
-
 
 @app.route('/users/<int:user_id>', methods=['PATCH'])
 def edit_user(user_id):
     # Query the database for the user with the provided user_id
     user = User.query.get(user_id)
-    
+
     if user:
         data = request.get_json()
-        
+
         # Update the user fields with the new data
         user.username = data.get('username', user.username)
         user.rank = data.get('rank', user.rank)
@@ -243,9 +331,9 @@ def edit_user(user_id):
         user.role = data.get('role', user.role)
         user.playstyle = data.get('playstyle', user.playstyle)
         # Add more fields as needed
-        
+
         db.session.commit()  # Commit the changes
-        
+
         return jsonify(message='User edited successfully', user=user.serialize())
     else:
         return jsonify(error='User not found'), 404
@@ -255,16 +343,16 @@ def edit_user(user_id):
 def delete_user(user_id):
     # Query the database for the user with the provided user_id
     user = User.query.get(user_id)
-    
+
     if user:
         db.session.delete(user)  # Mark the user for deletion
         db.session.commit()  # Commit the transaction
         return jsonify(message='User deleted successfully')
     else:
         return jsonify(error='User not found'), 404
-    
-    
-    
+
+
+#  COMMENT ROUTES
 @app.route('/comments', methods=['POST'])
 def create_comment():
     try:
@@ -289,6 +377,7 @@ def create_comment():
     except Exception as e:
         return jsonify(error="Failed to create a comment: " + str(e)), 500
 
+
 @app.route('/comments/<int:comment_id>', methods=['PATCH'])
 def edit_comment(comment_id):
     try:
@@ -309,6 +398,7 @@ def edit_comment(comment_id):
     except Exception as e:
         return jsonify(error="Failed to edit the comment: " + str(e)), 500
 
+
 @app.route('/comments/<int:comment_id>', methods=['DELETE'])
 def delete_comment(comment_id):
     try:
@@ -323,24 +413,65 @@ def delete_comment(comment_id):
             return jsonify(error='Comment not found'), 404
     except Exception as e:
         return jsonify(error="Failed to delete the comment: " + str(e)), 500
-    
-    
+
+    # HERO ROUTES
+
+
+@app.route('/heroes', methods=['GET'])
+def get_heroes():
+    try:
+        # Query the database to get all heroes
+
+        heroes = Hero.query.all()
+        heroes_data = [hero.serialize() for hero in heroes]
+        return jsonify(heroes_data), 200
+ # Return the hero data as JSON
+    except Exception as e:
+        return jsonify(error="Failed to retrieve heroes: " + str(e)), 500
+
+
+# CREATE HEROES
+
+@app.route('/heroes', methods=['POST'])
+def create_hero():
+    try:
+        hero_data = request.get_json()
+
+        image = hero_data.get('image')
+        name = hero_data.get('name')
+        description = hero_data.get('description')
+        role = hero_data.get('role')
+        health = hero_data.get('health')
+
+        new_hero = Hero(name=name, description=description,
+                        role=role, health=health, image=image)
+
+        db.session.add(new_hero)
+        db.session.commit()
+
+        # Return 201 for created status
+        return jsonify(message="Hero created successfully"), 201
+    except Exception as e:
+        return jsonify(error="Failed to create hero: " + str(e)), 500
+
+    # DELETE HEROES
+
+
 @app.route('/heroes/<int:hero_id>', methods=['DELETE'])
 def delete_hero(hero_id):
-        try:
-            # Query the database for the hero with the provided hero_id
-            hero = Hero.query.get(hero_id)
+    try:
+        # Query the database for the hero with the provided hero_id
+        hero = Hero.query.get(hero_id)
 
-            if hero:
-                db.session.delete(hero)  # Mark the hero for deletion
-                db.session.commit()  # Commit the transaction
-                return jsonify(message='Hero deleted successfully')
-            else:
-                return jsonify(error='Hero not found'), 404
-        except Exception as e:
-            return jsonify(error="Failed to delete the hero: " + str(e)), 500
-    
-    
+        if hero:
+            db.session.delete(hero)  # Mark the hero for deletion
+            db.session.commit()  # Commit the transaction
+            return jsonify(message='Hero deleted successfully')
+        else:
+            return jsonify(error='Hero not found'), 404
+    except Exception as e:
+        return jsonify(error="Failed to delete the hero: " + str(e)), 500
+
+
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
-

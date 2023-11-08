@@ -10,14 +10,15 @@ from flask_login import UserMixin
 # User-Hero association table for many-to-many relationship
 
 # User model for authentication
-class User(db.Model,UserMixin, SerializerMixin):
+
+
+class User(db.Model, UserMixin, SerializerMixin):
     __tablename__ = 'users'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
-    
-    
+
     username = db.Column(db.String(100), unique=True, nullable=False)
     rank = db.Column(db.String(20))
     battle_tag = db.Column(db.String(40))
@@ -28,35 +29,38 @@ class User(db.Model,UserMixin, SerializerMixin):
 
     # Define relationships
     posts = db.relationship('Post', back_populates='author')
-    heroes = db.relationship('Hero', secondary='user_hero_association', back_populates='users')
-    comments = db.relationship('Comment', back_populates='user')       
-    def serialize(self):
-        return {
-            'id': self.id,
-            'email': self.email,
-            'username': self.username,
-            'rank': self.rank,
-            'battle_tag': self.battle_tag,
-            'main_hero': self.main_hero,
-            'most_played': self.most_played,
-            'role': self.role,
-            'playstyle': self.playstyle
-            # Add other fields as needed
-        }
+    heroes = db.relationship(
+        'Hero', secondary='user_hero_association', back_populates='users')
+    comments = db.relationship('Comment', back_populates='user')
+
+    serialize_rules = ("-posts", "-heroes, -password")
+    # def serialize(self):
+    #     return {
+    #         'id': self.id,
+    #         'email': self.email,
+    #         'username': self.username,
+    #         'rank': self.rank,
+    #         'battle_tag': self.battle_tag,
+    #         'main_hero': self.main_hero,
+    #         'most_played': self.most_played,
+    #         'role': self.role,
+    #         'playstyle': self.playstyle
+    #         # Add other fields as needed
+    #     }
+
+    def set_password(self, password):
+        # Hash the password and store the hash
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
-         return bcrypt.check_password_hash(self.password, password)
-    def set_password(self, password):
-         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
-    # Serialize method for converting the model to a dictionary
-  
-
+        # Check if the provided password matches the stored hash
+        return bcrypt.check_password_hash(self.password, password)
 # Add other fields as needed
+
 
 class Hero(db.Model, SerializerMixin):
     __tablename__ = 'heroes'
 
-    
     id = db.Column(Integer, primary_key=True)
     name = db.Column(String(100), nullable=False)
     description = db.Column(String(300))  # Add the description field
@@ -64,6 +68,7 @@ class Hero(db.Model, SerializerMixin):
     health = db.Column(Integer, nullable=False)
     image = db.Column(String(255))
     # Serialize method for converting the model to a dictionary
+
     def serialize(self):
         return {
             'id': self.id,
@@ -75,7 +80,9 @@ class Hero(db.Model, SerializerMixin):
         }
 
     # Define relationships
-    users = db.relationship('User', secondary='user_hero_association', back_populates='heroes')
+    users = db.relationship(
+        'User', secondary='user_hero_association', back_populates='heroes')
+
 
 # Define a many-to-many association table for users and heroes
 user_hero_association = Table(
@@ -85,7 +92,8 @@ user_hero_association = Table(
     Column('hero_id', Integer, ForeignKey('heroes.id'))
 )
 
-class Post(db.Model,UserMixin, SerializerMixin):
+
+class Post(db.Model, UserMixin, SerializerMixin):
     __tablename__ = 'posts'
 
     id = db.Column(Integer, primary_key=True)
@@ -93,14 +101,15 @@ class Post(db.Model,UserMixin, SerializerMixin):
     content = db.Column(Text, nullable=False)
     username = db.Column(Integer, ForeignKey('users.username'), nullable=False)
     timestamp = db.Column(DateTime, nullable=False)
-    
+
     def serialize(self):
         return {
             'id': self.id,
             'title': self.title,
             'content': self.content,
             'username': self.username,
-            'timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S')  # Format the timestamp as a string
+            # Format the timestamp as a string
+            'timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S')
         }
 
     # Define relationships
@@ -108,7 +117,7 @@ class Post(db.Model,UserMixin, SerializerMixin):
     comments = db.relationship('Comment', back_populates='post')
 
     # Serialize method for converting the model to a dictionary
-   
+
 
 class Comment(db.Model):
     __tablename__ = 'comments'
@@ -119,6 +128,7 @@ class Comment(db.Model):
 
     post = db.relationship('Post', back_populates='comments')
     user = db.relationship('User', back_populates='comments')
+
     def serialize(self):
         return {
             'id': self.id,

@@ -55,31 +55,42 @@ function Userlist() {
             const username = user.username ? user.username.toLowerCase() : '';
             const email = user.email ? user.email.toLowerCase() : '';
             const role = user.role ? user.role.toLowerCase() : '';
+            const rank = user.rank ? user.rank.toLowerCase() : '';
+            const battle_tag = user.battle_tag ? user.battle_tag.toLowerCase() : '';
+            const main_hero = user.main_hero ? user.main_hero.toLowerCase() : '';
+            const playstyle = user.playstyle ? user.playstyle.toLowerCase() : '';
+            const most_played = user.most_played ? user.most_played.toLowerCase() : '';
             return (
               username.includes(searchQuery.toLowerCase()) ||
               email.includes(searchQuery.toLowerCase()) ||
-              role.includes(searchQuery.toLowerCase())
+              role.includes(searchQuery.toLowerCase()) ||
+              rank.includes(searchQuery.toLowerCase()) ||
+              main_hero.includes(searchQuery.toLowerCase()) ||
+              playstyle.includes(searchQuery.toLowerCase()) ||
+              most_played.includes(searchQuery.toLowerCase()) ||
+              
+              battle_tag.includes(searchQuery.toLowerCase()) 
             );
           })
           .map((user) => (
             <li key={user.id} className="flex justify-between gap-6 py-5">
-              <div className="flex min-w-0 gap-4">
-                <img
-                  className="h-12 w-12 flex-none rounded-full bg-gray-50"
-                  src={user.avatar}
-                  alt={user.username}
-                />
+              <div className="flex min-w-0 gap-4 p-3">
+               
                 <div className="min-w-0 flex-auto">
                   <p className="text-sm font-semibold text-gray-900">{user.username}</p>
-                  <p className="mt-1 text-xs text-gray-500">{user.email}</p>
+                  
                 </div>
               </div>
               <div className="hidden shrink sm:flex sm:flex-col sm:items-end">
                 <p className="text-sm text-gray-900">{user.role}</p>
-                <p className="mt-1 text-xs text-gray-500">Last seen {user.lastSeen}</p>
+                <p className="text-sm text-gray-900">{user.rank}</p>
+                <p className="text-sm text-gray-900">{user.battle_tag}</p>
+                <p className="text-sm text-gray-900">{user.main_hero}</p>
+                <p className="text-sm text-gray-900">{user.most_played}</p>
+                <p className="text-sm text-gray-900">{user.playstyle}</p>
                 <button
                   onClick={() => handleDelete(user.id)}
-                  className="text-sm text-red-500"
+                  className="text-sm  text-red-500"
                 >
                   Delete
                 </button>

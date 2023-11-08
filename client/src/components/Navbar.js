@@ -1,30 +1,63 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link, useHistory } from "react-router-dom";
+import Oasis from "./Oasis.png";
 
-const Navbar = () => {
+const Navbar = ({ user, setUser }) => {
+  const history = useHistory();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/logout", {
+        method: "POST", // You can use POST or GET as needed
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        setUser(null);
+        history.push("/login"); // Redirect to the login page after logout
+      } else {
+        // Handle logout failure (e.g., display an error message).
+      }
+    } catch (error) {
+      console.error("Error occurred during logout:", error);
+    }
+  };
+
   return (
-    <nav className="bg-orange-500 p-4">
+    <nav className="bg-orange-500 p-2">
+      <img src={Oasis} alt="logo" className=" h-1/12 w-1/12  " />
       <div className="container mx-auto">
-        <div className="flex justify-between items-center">
-          <div className="text-white text-xl font-bold">My App</div>
+        <div className="flex justify-between items-center ">
+          <div className="text-white text-xl font-bold"></div>
           <ul className="flex space-x-4">
-            <li>
+            <li className="text-white text-xl font-bold">
               <Link to="/dashboard">Dashboard</Link>
             </li>
-            <li>
-            <Link to="/users">Users</Link>
+            <li className="text-white text-xl font-bold">
+              <Link to="/users">Users</Link>
             </li>
-            <li>
+            <li className="text-white text-xl font-bold">
               <Link to="/heroes">Heroes</Link>
             </li>
-            <li>
+            <li className="text-white text-xl font-bold">
               <Link to="/posts">Posts</Link>
             </li>
-            <li>
-              <Link to="/signuppage">SignUp</Link>
-            </li>
-            
-          
+            {user === undefined ? null : user ? (
+              <li className="text-white text-xl font-bold">
+                <button onClick={handleLogout}>Log Out</button>
+              </li>
+            ) : (
+              <>
+                <li className="text-white text-xl font-bold">
+                  <Link to="/signuppage">SignUp</Link>
+                </li>
+                <li className="text-white text-xl font-bold">
+                  <Link to="/Login">Log In</Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
