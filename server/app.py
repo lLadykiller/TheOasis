@@ -2,6 +2,7 @@
 # from werkzeug.exceptions import Unauthorized
 # from werkzeug.urls import url_decode
 # Standard library imports
+import logging
 from flask import request, make_response, session, abort
 # Remote library imports
 import ipdb
@@ -66,7 +67,7 @@ def load_user(user_id):
 
 @login_manager.unauthorized_handler
 def unauthorized():
-    ipdb.set_trace()
+    
     return ""
 
 
@@ -103,31 +104,44 @@ def get_posts():
 
     return jsonify(post_list), 200  # Return the list of posts as JSON
 
+post_parser = reqparse.RequestParser()
+post_parser.add_argument('title', type=str, required=True)
+post_parser.add_argument('content', type=str, required=True)
+
+# Define a resource for creating a new post
+
+
+# Add the resource to your API
 
 @app.route('/create/post', methods=['POST'])
 @login_required  # Requires the user to be logged in
 def create_post():
-    data = request.get_json()
-    title = data.get('title')
-    content = data.get('content')
-
-    if not title or not content:
-        return jsonify({'message': 'Title or content missing.'}), 400
-
-    if not current_user.is_authenticated:
-        return jsonify({'message': 'User is not logged in.'}), 401
-
-    new_post = Post(
-        title=title,
-        content=content,
-        username=current_user.username,
-        timestamp=datetime.utcnow()
-    )
-
-    db.session.add(new_post)
-    db.session.commit()
-
-    return jsonify({'message': 'Post created successfully', 'post': new_post.serialize()}), 201
+    try:
+        data = request.get_json()
+        title = data.get('title')
+        content = data.get('content')
+        
+        if not title or not content:
+            return jsonify(error='Title and content are required.'), 400
+        
+        if not current_user.is_authenticated:
+            return jsonify(error='User is not authenticated.'), 401
+        
+        new_post = Post(
+            title=title,
+            content=content,
+            username=current_user.username,
+            timestamp=datetime.utcnow()
+        )
+        
+        db.session.add(new_post)
+        db.session.commit()
+        
+        return jsonify({'message': 'Post created successfully', 'post': new_post.serialize()}), 201
+    
+    except Exception as e:
+        app.logger.error("Error in create_post route: " + str(e))
+        return jsonify(error="Failed to create a post: " + str(e)), 500
 
 # class CreatePost(Resource):
 #     def post(self):
@@ -152,15 +166,37 @@ def create_post():
 
 # api.add_resource(CreatePost, '/post')
 
+from flask import jsonify
+
+@app.route('/profile/get', methods=['GET'])
+@login_required
+def get_user_profile():
+    user = current_user
+    if user:
+        # You can either serialize the user data directly in this route or use a serialization method
+        user_data = {
+            'username': user.username,
+            'email': user.email,
+            'rank': user.rank,
+            'battle_tag': user.battle_tag,
+            'main_hero': user.main_hero,
+            'most_played': user.most_played,
+            'role': user.role,
+            'playstyle': user.playstyle
+        }
+        return jsonify(user_data), 200
+    else:
+        return jsonify(error="User not found"), 404
+
+
 @app.route('/profile/create', methods=['POST'])
-@login_required  # Requires the user to be logged in
+@login_required
 def create_profile():
     try:
         user = current_user
-
         if user:
             user_data = request.get_json()
-
+           
             # Extract the additional profile data from the request
             rank = user_data.get('rank')
             battle_tag = user_data.get('battle_tag')
@@ -168,7 +204,7 @@ def create_profile():
             most_played = user_data.get('most_played')
             role = user_data.get('role')
             playstyle = user_data.get('playstyle')
-
+            logging.info(f"Extracted user data: {rank}, {battle_tag}, ...")
             # Update the user's profile data
             user.rank = rank
             user.battle_tag = battle_tag
@@ -176,13 +212,13 @@ def create_profile():
             user.most_played = most_played
             user.role = role
             user.playstyle = playstyle
-
+           
             db.session.commit()
-
             return jsonify(message="Profile created successfully", user=user.serialize())
         else:
             return jsonify(error="User not found"), 404
     except Exception as e:
+        
         return jsonify(error="Failed to create profile: " + str(e)), 500
 
 
@@ -340,6 +376,7 @@ def edit_user(user_id):
 
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
+@login_required
 def delete_user(user_id):
     # Query the database for the user with the provided user_id
     user = User.query.get(user_id)

@@ -34,19 +34,17 @@ class User(db.Model, UserMixin, SerializerMixin):
     comments = db.relationship('Comment', back_populates='user')
 
     serialize_rules = ("-posts", "-heroes, -password")
-    # def serialize(self):
-    #     return {
-    #         'id': self.id,
-    #         'email': self.email,
-    #         'username': self.username,
-    #         'rank': self.rank,
-    #         'battle_tag': self.battle_tag,
-    #         'main_hero': self.main_hero,
-    #         'most_played': self.most_played,
-    #         'role': self.role,
-    #         'playstyle': self.playstyle
-    #         # Add other fields as needed
-    #     }
+    def serialize(self):
+        return {
+           
+            'rank': self.rank,
+            'battle_tag': self.battle_tag,
+            'main_hero': self.main_hero,
+            'most_played': self.most_played,
+            'role': self.role,
+            'playstyle': self.playstyle
+            # Add other fields as needed
+        }
 
     def set_password(self, password):
         # Hash the password and store the hash
@@ -101,7 +99,7 @@ class Post(db.Model, UserMixin, SerializerMixin):
     content = db.Column(Text, nullable=False)
     username = db.Column(Integer, ForeignKey('users.username'), nullable=False)
     timestamp = db.Column(DateTime, nullable=False)
-
+    # serialize_rules = ("-heroes, -comments", )
     def serialize(self):
         return {
             'id': self.id,
