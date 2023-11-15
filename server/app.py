@@ -390,6 +390,23 @@ def delete_user(user_id):
 
 
 #  COMMENT ROUTES
+from flask import abort
+
+@app.route('/comments/<int:post_id>', methods=['GET'])
+def get_comments(post_id):
+    try:
+        # Query the database for comments associated with the provided post_id
+        comments = Comment.query.filter_by(post_id=post_id).all()
+
+        # Serialize the comments
+        comments_data = [comment.serialize() for comment in comments]
+
+        # Return the comments as JSON
+        return jsonify(comments_data), 200
+
+    except Exception as e:
+        return jsonify(error=f"Failed to retrieve comments: {str(e)}"), 500
+
 @app.route('/comments', methods=['POST'])
 def create_comment():
     try:
@@ -398,22 +415,29 @@ def create_comment():
         post_id = data.get('post_id')  # Obtain the post's ID
         text = data.get('text')  # Extract the comment text
 
-        # Check if the user and post exist (perform similar checks for authorization)
+        # Validate input data
+        if not all((user_id, post_id, text)):
+            return jsonify(error='Incomplete data. Please provide user_id, post_id, and text.'), 400
+
+        # Check if the user and post exist
         user = User.query.get(user_id)
         post = Post.query.get(post_id)
 
-        if user and post:
-            # Create a new comment and associate it with the user and post
-            new_comment = Comment(user_id=user_id, post_id=post_id, text=text)
-            db.session.add(new_comment)
-            db.session.commit()
+        if user is None:
+            app.logger.error("Error in create_post route: " + str(e))
+            return jsonify(error=f'User not found for user_id {user_id}.'), 404
 
-            return jsonify(message='Comment created successfully', comment=new_comment.serialize()), 201
-        else:
-            return jsonify(error='User or post not found'), 404
+        if post is None:
+            return jsonify(error=f'Post not found for post_id {post_id}.'), 404
+
+        # Create a new comment and associate it with the user and post
+        new_comment = Comment(user_id=user_id, post_id=post_id, text=text)
+        db.session.add(new_comment)
+        db.session.commit()
+
+        return jsonify(message='Comment created successfully', comment=new_comment.serialize()), 201
     except Exception as e:
         return jsonify(error="Failed to create a comment: " + str(e)), 500
-
 
 @app.route('/comments/<int:comment_id>', methods=['PATCH'])
 def edit_comment(comment_id):
