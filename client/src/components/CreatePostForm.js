@@ -1,4 +1,3 @@
-// CreatePostForm.js
 import React, { useState } from 'react';
 
 function CreatePostForm({ createPost }) {

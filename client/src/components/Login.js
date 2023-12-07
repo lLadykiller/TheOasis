@@ -1,16 +1,21 @@
-import React, { useState } from "react";
+import React, {useContext, useState } from "react";
 import { useHistory } from "react-router-dom";
-function Login({ setUser }) {
+import { UserContext } from "./App";
+
+function Login() {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
 
+  const { setUser } = useContext(UserContext); // Use useContext to get setUser from the context
+  const history = useHistory();
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-  const history = useHistory();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 

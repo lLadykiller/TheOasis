@@ -41,15 +41,15 @@ function Heroes() {
               </div>
               <div className="mt-4 flex justify-between">
                 <div>
-                  <h3 className="text-sm text-gray-700">
+                  <h3 className="text-lg font-bold text-black flex justify-center">
                     
                       <span aria-hidden="true" className="absolute inset-0" />
                       {hero.name} 
                     
                   </h3>
 
-                  <p className="mt-1 text-sm text-gray-500">{hero.role}</p>  
-                  <p className="mt-1 text-sm text-gray-500">{hero.description}</p>
+                  <p className="mt-1 text-sm font-bold flex justify-center text-gray-600">{hero.role}</p>  
+                  <p className="mt-1 text-sm text-gray-500 ">{hero.description}</p>
                 </div>
                 <p className="text-sm font-medium text-gray-500">{hero.health}</p>  
               </div>

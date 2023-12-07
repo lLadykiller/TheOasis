@@ -298,32 +298,6 @@ class Users(Resource):
 api.add_resource(Users, "/users")
 
 
-# @app.route('/user', methods=['GET'])
-# # Protect the route with authentication
-# def get_user_information():
-#     # Retrieve the signed-in user's information from the authentication system
-#     user = current_user
-
-#     if user:
-#         # Prepare the user's data as a dictionary
-#         user_data = {
-#             'id': user.id,
-#             'username': user.username,
-#             'email': user.email,
-#             'rank': user.rank,
-#             'battle_tag': user.battle_tag,
-#             'main_hero': user.main_hero,
-#             'most_played': user.most_played,
-#             'role': user.role,
-#             'playstyle': user.playstyle,
-#             # Add other user attributes here
-#         }
-
-#         return jsonify(user_data), 200  # Return user data as JSON
-#     else:
-#         return jsonify({'message': 'User not found'}), 404
-
-# # working
 @app.route('/user/create', methods=['POST'])
 def create_user():
     # Retrieve user data from the request
@@ -350,27 +324,35 @@ def create_user():
     return jsonify(message="User created successfully", user=new_user.serialize())
 
 
-@app.route('/users/<int:user_id>', methods=['PATCH'])
-def edit_user(user_id):
+@app.route('/users/update', methods=['PATCH'])
+def edit_user():
+    # Check if 'user_id' is in the session
+    if 'user_id' not in session:
+        return jsonify(error='User not authenticated'), 401
+
     # Query the database for the user with the provided user_id
-    user = User.query.get(user_id)
+    user = User.query.get(session['user_id'])
 
     if user:
-        data = request.get_json()
+        try:
+            data = request.get_json()
 
-        # Update the user fields with the new data
-        user.username = data.get('username', user.username)
-        user.rank = data.get('rank', user.rank)
-        user.battle_tag = data.get('battle_tag', user.battle_tag)
-        user.main_hero = data.get('main_hero', user.main_hero)
-        user.most_played = data.get('most_played', user.most_played)
-        user.role = data.get('role', user.role)
-        user.playstyle = data.get('playstyle', user.playstyle)
-        # Add more fields as needed
+            # Update the user fields with the new data
+            user.username = data.get('username', user.username)
+            user.rank = data.get('rank', user.rank)
+            user.battle_tag = data.get('battle_tag', user.battle_tag)
+            user.main_hero = data.get('main_hero', user.main_hero)
+            user.most_played = data.get('most_played', user.most_played)
+            user.role = data.get('role', user.role)
+            user.playstyle = data.get('playstyle', user.playstyle)
 
-        db.session.commit()  # Commit the changes
+            db.session.commit()
+            return jsonify(message='User edited successfully', user=user.serialize())
 
-        return jsonify(message='User edited successfully', user=user.serialize())
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f'Error editing user: {str(e)}'), 500
+
     else:
         return jsonify(error='User not found'), 404
 
@@ -461,15 +443,19 @@ def edit_comment(comment_id):
 
 
 @app.route('/comments/<int:comment_id>', methods=['DELETE'])
+@login_required
 def delete_comment(comment_id):
     try:
         comment = Comment.query.get(comment_id)
-        if comment:
-            # Check if the user is authorized to delete this comment (add your own logic here)
 
-            db.session.delete(comment)
-            db.session.commit()
-            return jsonify(message='Comment deleted successfully')
+        if comment:
+            # Check if the user is the author of the comment
+            if comment.user_id == current_user.id:
+                db.session.delete(comment)
+                db.session.commit()
+                return jsonify(message='Comment deleted successfully')
+            else:
+                return jsonify(error='Unauthorized: You can only delete your own comments'), 403
         else:
             return jsonify(error='Comment not found'), 404
     except Exception as e:
@@ -534,5 +520,52 @@ def delete_hero(hero_id):
         return jsonify(error="Failed to delete the hero: " + str(e)), 500
 
 
+@app.route('/delete/post/<int:post_id>', methods=['DELETE'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get(post_id)
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+
+    if current_user != post.author:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Manually delete associated comments
+        Comment.query.filter_by(post_id=post_id).delete()
+
+        # Delete the post
+        db.session.delete(post)
+        db.session.commit()
+
+        return jsonify({'message': 'Post deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete post. {str(e)}'}), 500
+
+# Flask route for editing a post
+@app.route('/api/posts/<int:post_id>', methods=['PATCH'])
+@login_required
+def edit_post(post_id):
+    try:
+        # Retrieve the post from the database
+        post = Post.query.get(post_id)
+
+        # Check if the user is the author of the post
+        if post and post.author == current_user:
+            data = request.get_json()
+            new_content = data.get('content')
+
+            # Update the post content
+            post.content = new_content
+            db.session.commit()
+
+            return jsonify(message='Post updated successfully', post=post.serialize()), 200
+        else:
+            return jsonify(error='Unauthorized: You can only edit your own posts'), 403
+
+    except Exception as e:
+        return jsonify(error=f"Failed to edit the post: {str(e)}"), 500
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
+

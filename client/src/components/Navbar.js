@@ -26,34 +26,34 @@ const Navbar = ({ user, setUser }) => {
   };
 
   return (
-    <nav className="bg-orange-500 p-2">
-      <img src={Oasis} alt="logo" className=" h-1/12 w-1/12  " />
+    <nav className="bg-white p-2">
+      <img src={Oasis} alt="logo" className=" h-1/6 w-1/6  " />
       <div className="container mx-auto">
         <div className="flex justify-between items-center ">
-          <div className="text-white text-xl font-bold"></div>
+          <div className="text-orange-500 text-xl font-bold"></div>
           <ul className="flex space-x-4">
-            <li className="text-white text-xl font-bold">
+            <li className="text-orange-500 text-xl font-bold">
               <Link to="/dashboard">Dashboard</Link>
             </li>
-            <li className="text-white text-xl font-bold">
+            <li className="text-orange-500 text-xl font-bold">
               <Link to="/users">Users</Link>
             </li>
-            <li className="text-white text-xl font-bold">
+            <li className="text-orange-500 text-xl font-bold">
               <Link to="/heroes">Heroes</Link>
             </li>
-            <li className="text-white text-xl font-bold">
+            <li className="text-orange-500 text-xl font-bold">
               <Link to="/posts">Posts</Link>
             </li>
             {user === undefined ? null : user ? (
-              <li className="text-white text-xl font-bold">
+              <li className="text-orange-500 text-xl font-bold">
                 <button onClick={handleLogout}>Log Out</button>
               </li>
             ) : (
               <>
-                <li className="text-white text-xl font-bold">
+                <li className="text-orange-500 text-xl font-bold">
                   <Link to="/signuppage">SignUp</Link>
                 </li>
-                <li className="text-white text-xl font-bold">
+                <li className="text-orange-500 text-xl font-bold">
                   <Link to="/Login">Log In</Link>
                 </li>
               </>

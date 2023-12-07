@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
+import TROGGERS from './TROGGERS.png';
 function Userlist() {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,23 +77,20 @@ function Userlist() {
               <div className="flex min-w-0 gap-4 p-3">
                
                 <div className="min-w-0 flex-auto">
+                <img className="h-12 w-12 flex-none rounded-full bg-gray-50" src={TROGGERS} alt="" />
                   <p className="text-sm font-semibold text-gray-900">{user.username}</p>
                   
                 </div>
               </div>
-              <div className="hidden shrink sm:flex sm:flex-col sm:items-end">
-                <p className="text-sm text-gray-900">{user.role}</p>
+              <div className="hidden shrink sm:flex sm:flex-col sm:items-center">
+              <p className="text-sm text-gray-900">{user.battle_tag}</p>
+                <p className="text-sm text-gray-900 ">{user.role}</p>
                 <p className="text-sm text-gray-900">{user.rank}</p>
-                <p className="text-sm text-gray-900">{user.battle_tag}</p>
+               
                 <p className="text-sm text-gray-900">{user.main_hero}</p>
                 <p className="text-sm text-gray-900">{user.most_played}</p>
                 <p className="text-sm text-gray-900">{user.playstyle}</p>
-                <button
-                  onClick={() => handleDelete(user.id)}
-                  className="text-sm  text-red-500"
-                >
-                  Delete
-                </button>
+              
               </div>
             </li>
           ))}

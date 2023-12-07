@@ -112,7 +112,7 @@ class Post(db.Model, UserMixin, SerializerMixin):
 
     # Define relationships
     author = db.relationship('User', back_populates='posts')
-    comments = db.relationship('Comment', back_populates='post')
+    comments = db.relationship('Comment', back_populates='post', cascade='all, delete-orphan')
 
     # Serialize method for converting the model to a dictionary
 

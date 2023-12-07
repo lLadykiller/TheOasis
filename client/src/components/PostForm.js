@@ -10,6 +10,12 @@ function PostForm({ createPost }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Validate input
+    if (!formData.title || !formData.content) {
+      console.error('Title and content are required.');
+      return;
+    }
+
     createPost(formData);
 
     // Clear the form fields after submission
@@ -28,7 +34,7 @@ function PostForm({ createPost }) {
   };
 
   return (
-    <div className="mt-12 mx-auto p-8 rounded-lg bg-white shadow-md max-w-lg">
+    <div className="mt-12 mx-auto p-8 rounded-lg bg-orange-400 shadow-md max-w-lg">
       <h2 className="text-3xl font-bold text-center text-gray-900">Create a New Post</h2>
       <form onSubmit={handleSubmit}>
         <div className="mt-6">
@@ -62,7 +68,7 @@ function PostForm({ createPost }) {
         </div>
         <button
           type="submit"
-          className="mt-8 w-full px-6 py-3 text-lg font-medium text-white bg-orange-500 rounded-md shadow-md focus:outline-none hover:bg-indigo-700 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
+          className="mt-8 w-full px-6 py-3 text-lg font-medium text-white bg-orange-400 rounded-md shadow-md focus:outline-none hover:bg-yellow-300 focus:ring focus:ring-indigo-300 focus:ring-opacity-50"
         >
           Create Post
         </button>
