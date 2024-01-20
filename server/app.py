@@ -1,26 +1,23 @@
-#!/usr/bin/env python3
-# from werkzeug.exceptions import Unauthorized
-# from werkzeug.urls import url_decode
-# Standard library imports
+
 import logging
 from flask import request, make_response, session, abort
-# Remote library imports
+
 import ipdb
 from flask import Flask, request, render_template, redirect, url_for, jsonify, flash, make_response, session
 from flask_restful import Resource, reqparse
 from flask_login import LoginManager, login_required, current_user, logout_user, login_user
 from datetime import datetime
 from models import User, Post, Comment, Hero
-# Local imports
+
 from config import app, db, api
 from werkzeug.security import check_password_hash
-# Add your model imports
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Views go here!
+
 
 
 # Define the login route

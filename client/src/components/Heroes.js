@@ -27,7 +27,7 @@ function Heroes() {
   return (
     <div className="bg-white">
       <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
-        <h2 className="text-2xl font-bold tracking-tight  text-gray-900">Overwatch 2 Heroes</h2>
+        <h2 className="text-2xl font-bold tracking-tight  text-orange-500">Overwatch 2 Heroes</h2>
 
         <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
           {heroes.map((hero) => (
@@ -41,14 +41,14 @@ function Heroes() {
               </div>
               <div className="mt-4 flex justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-black flex justify-center">
+                  <h3 className="text-lg font-bold text-orange-500 flex justify-center">
                     
                       <span aria-hidden="true" className="absolute inset-0" />
                       {hero.name} 
                     
                   </h3>
 
-                  <p className="mt-1 text-sm font-bold flex justify-center text-gray-600">{hero.role}</p>  
+                  <p className="mt-1 text-sm font-bold flex justify-center text-orange-500">{hero.role}</p>  
                   <p className="mt-1 text-sm text-gray-500 ">{hero.description}</p>
                 </div>
                 <p className="text-sm font-medium text-gray-500">{hero.health}</p>  
