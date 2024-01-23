@@ -48,6 +48,9 @@ function Postcard({ post, user, onDelete, onEditPost  }) {
     }
   }, [post]);
 
+
+
+  
   return (
     <Card className="mb-4" style={{ width: '18rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', backgroundColor: '#FFA500' }}>
       <Card.Body className="flex flex-col justify-center items-center text-center">
